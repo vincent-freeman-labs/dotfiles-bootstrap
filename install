@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# =============================================================================
+# dotfiles-bootstrap — thin PUBLIC launcher for private xiao-he dotfiles.
+# =============================================================================
+# This file holds no secrets — only the private repo's path. Anyone can
+# download it, but the install only proceeds with read access to
+# vincent-freeman-labs/xiao-he (otherwise `gh api` fails loudly below).
+#
+# New Mac, one line:
+#
+#   curl -fsSL https://raw.githubusercontent.com/vincent-freeman-labs/dotfiles-bootstrap/main/install | bash
+#
+# What it does: brew (if missing) → gh (if missing) → browser login
+# (if missing) → fetch infra/dotfiles tarball → exec its install.sh.
+# Everything after authentication lives in the private repo.
+#
+# Keep it runnable under macOS /bin/bash 3.2: no empty-array expansions
+# under `set -u`, no associative arrays, no mapfile.
+# =============================================================================
+set -euo pipefail
+
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+
+command -v brew >/dev/null || /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+command -v gh >/dev/null || brew install gh
+gh auth status >/dev/null 2>&1 || gh auth login -h github.com -p https -w
+
+gh api repos/vincent-freeman-labs/xiao-he/contents/infra/dotfiles/bootstrap.sh \
+	--jq .content | base64 -d | bash
